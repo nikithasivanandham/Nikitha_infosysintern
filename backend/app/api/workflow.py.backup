@@ -1,0 +1,128 @@
+import json
+import uuid
+
+from fastapi import APIRouter, Depends, HTTPException, status
+
+from app.core.dependencies import get_current_user
+from app.database.connection import get_db_connection
+from app.schemas.workflow import WorkflowCreate, WorkflowResponse
+
+
+router = APIRouter(
+    prefix="/workflows",
+    tags=["Workflows"]
+)
+
+
+@router.post(
+    "/",
+    response_model=WorkflowResponse,
+    status_code=status.HTTP_201_CREATED
+)
+def start_workflow(
+    request: WorkflowCreate,
+    current_user: dict = Depends(get_current_user)
+):
+    workflow_id = str(uuid.uuid4())
+
+    connection = get_db_connection()
+
+    try:
+        connection.execute(
+            """
+            INSERT INTO workflows (
+                workflow_id,
+                workflow_type,
+                status,
+                requested_by,
+                input_data
+            )
+            VALUES (?, ?, ?, ?, ?)
+            """,
+            (
+                workflow_id,
+                request.workflow_type,
+                "pending",
+                current_user["user_id"],
+                json.dumps(request.input_data)
+            )
+        )
+
+        connection.commit()
+
+        return WorkflowResponse(
+            workflow_id=workflow_id,
+            workflow_type=request.workflow_type,
+            status="pending",
+            requested_by=current_user["user_id"],
+            input_data=request.input_data,
+            decision=None
+        )
+
+    finally:
+        connection.close()
+
+
+@router.get("/{workflow_id}")
+def get_workflow(
+    workflow_id: str,
+    current_user: dict = Depends(get_current_user)
+):
+    connection = get_db_connection()
+
+    try:
+        row = connection.execute(
+            """
+            SELECT *
+            FROM workflows
+            WHERE workflow_id = ?
+            AND requested_by = ?
+            """,
+            (workflow_id, current_user["user_id"])
+        ).fetchone()
+
+        if row is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Workflow not found"
+            )
+
+        workflow = dict(row)
+        workflow["input_data"] = json.loads(workflow["input_data"])
+
+        return workflow
+
+    finally:
+        connection.close()
+
+@router.get("/{workflow_id}/status")
+def get_workflow_status(
+    workflow_id: str,
+    current_user: dict = Depends(get_current_user)
+):
+    connection = get_db_connection()
+
+    try:
+        row = connection.execute(
+            """
+            SELECT workflow_id, status, decision
+            FROM workflows
+            WHERE workflow_id = ? AND requested_by = ?
+            """,
+            (workflow_id, current_user["user_id"])
+        ).fetchone()
+
+        if row is None:
+            raise HTTPException(
+                status_code=404,
+                detail="Workflow not found"
+            )
+
+        return {
+            "workflow_id": row["workflow_id"],
+            "status": row["status"],
+            "decision": row["decision"]
+        }
+
+    finally:
+        connection.close()
