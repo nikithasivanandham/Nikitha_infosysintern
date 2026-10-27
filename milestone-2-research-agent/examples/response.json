@@ -1,0 +1,98 @@
+{
+  "schema_version": "1.0",
+  "request_id": "req-20261027-001",
+  "workflow_id": "wf-ops-883",
+  "agent": "research_agent",
+  "status": "success",
+  "airport_code": "DEL",
+  "data_mode": "synthetic",
+  "summary": "Synthetic advisory review for DEL: Visibility is forecast to remain below 400m until 08:30 UTC due to radiative fog. Target aircraft AIC101 is airborne in holding pattern; 6E204 has not yet reported live state vectors.",
+  "weather": {
+    "status": "success",
+    "provider": "open-meteo",
+    "data_type": "synthetic",
+    "observations": {
+      "visibility_meters": 350,
+      "cloud_cover_percent": 90,
+      "temperature_celsius": 14.2,
+      "wind_speed_kmh": 4.5,
+      "wind_direction_deg": 290
+    },
+    "units": {
+      "visibility_meters": "m",
+      "cloud_cover_percent": "%",
+      "temperature_celsius": "°C",
+      "wind_speed_kmh": "km/h",
+      "wind_direction_deg": "°"
+    },
+    "valid_time": "2026-10-27T06:00:00Z",
+    "source_id": "src-wx-synth-001"
+  },
+  "flights": [
+    {
+      "requested_identifier": "AIC101",
+      "status": "found",
+      "provider": "opensky",
+      "data": {
+        "callsign": "AIC101",
+        "baro_altitude_meters": 3200,
+        "velocity_mps": 140.5,
+        "on_ground": false,
+        "true_track_deg": 110.0
+      },
+      "data_timestamp": "2026-10-27T06:01:15Z",
+      "source_id": "src-flt-synth-001"
+    },
+    {
+      "requested_identifier": "6E204",
+      "status": "not_found",
+      "provider": "opensky",
+      "data": {},
+      "data_timestamp": null,
+      "source_id": "src-flt-synth-001"
+    }
+  ],
+  "findings": [
+    {
+      "finding": "DEL surface visibility is currently 350 meters with high fog persistence.",
+      "evidence_refs": [
+        "src-wx-synth-001"
+      ],
+      "kind": "provider_fact",
+      "limitations": [
+        "Synthetic test data; open-meteo is numerical weather model output, not official METAR/SPECI."
+      ]
+    },
+    {
+      "finding": "Flight AIC101 is maintaining holding altitude at ~3200m awaiting visibility clearance.",
+      "evidence_refs": [
+        "src-flt-synth-001"
+      ],
+      "kind": "inference",
+      "limitations": [
+        "OpenSky provides live state vectors only; commercial flight intentions and fuel endurance are unknown."
+      ]
+    }
+  ],
+  "sources": [
+    {
+      "source_id": "src-wx-synth-001",
+      "provider": "open-meteo",
+      "data_type": "synthetic",
+      "retrieved_at": "2026-10-27T06:02:00Z",
+      "source_url": "https://api.open-meteo.com/v1/forecast?latitude=28.56&longitude=77.10"
+    },
+    {
+      "source_id": "src-flt-synth-001",
+      "provider": "opensky",
+      "data_type": "synthetic",
+      "retrieved_at": "2026-10-27T06:02:10Z",
+      "source_url": "https://opensky-network.org/api/states/all"
+    }
+  ],
+  "missing_information": [
+    "No live state vector returned for flight 6E204; transponder may be inactive or outside receiver coverage."
+  ],
+  "errors": [],
+  "created_at": "2026-10-27T06:02:30Z"
+}
